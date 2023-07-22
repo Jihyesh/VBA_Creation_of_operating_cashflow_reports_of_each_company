@@ -1,0 +1,115 @@
+Option Explicit
+
+Sub CreateSubReports()
+
+Application.ScreenUpdating = False
+Application.Calculation = xlCalculationManual
+
+    Dim vCity As Variant
+    
+    ' Get unique list of cities
+    vCity = GetUniqueListOfCities() ' get the value of the array
+    ' Stop
+    
+    ' Loop over those cities
+    LoopOverEachCity vCity
+    ' Create Extract Report for each city
+
+
+Application.ScreenUpdating = True
+Application.Calculation = xlCalculationAutomatic
+
+
+End Sub
+
+
+
+Function GetUniqueListOfCities() As Variant
+'Sub GetUniqueListOfCities()
+' * Get the big idea of how the procedure would work and then change this procedure into a fucntion from sub.
+
+    Dim rngData As Range, rngCrit As Range, rngExt As Range
+    Dim rngReturn As Range
+    
+    ' * VBA Set is a statement that assigns any value key that says an object or a reference to a variable.
+    Set rngData = shtData.Range("B2").CurrentRegion   '* Range.CurrentRegion: Control + A
+                                                      '* shtData is the name of systems's worksheet
+    Set rngCrit = shtCities.Range("A1:A2")            '* shtCities is the name of system's worksheet
+    Set rngExt = shtCities.Range("D1")
+    rngData.AdvancedFilter xlFilterCopy, rngCrit, rngExt, True '* True : Unique list
+                                                               '* xlFilterCopy : Copy filtered data to new location
+    'Stop
+    ' * Stop is used to debug. i.e. To see hot the procedure work before Stop line.
+
+    ' Extract only items as an array excluding the head
+    Set rngReturn = rngExt.CurrentRegion
+    'If rngReturn.Rows.Count = 1 Then Exit Sub
+    If rngReturn.Rows.Count = 1 Then Exit Function
+
+    ' From the number of the rows of the 'rngReturn', subtract 1 [Resize(~Rows.Count -1)]
+    ' and move the range one row down [offset(1)]
+    ' rngReturn is an array
+    Set rngReturn = rngReturn.Resize(rngReturn.Rows.Count - 1).Offset(1)
+
+    ' The return value of GetUniqueListOfCities function is an array, rngReturn.Value.
+    GetUniqueListOfCities = rngReturn.Value 'function return
+
+
+End Function
+
+
+Sub LoopOverEachCity(ByRef vCities As Variant)
+
+    ' https://www.educba.com/vba-byref/
+    ' Use the variable, vCities, stored before this procedure
+
+
+    Dim i As Integer
+    Dim szCity As String
+    Dim rngHeader As Range, rngData As Range, rngCrit As Range, rngExt As Range
+     
+
+    ' Don't put code in the loop, if it can go outside the loop, so that your PC isn't doing unnecessary work.
+    Set rngData = shtData.Range("B2").CurrentRegion
+    Set rngCrit = shtCities.Range("A1:A2")
+    Set rngHeader = shtCities.Range("NameSampleHeader")
+
+    'LBound: the first index value of the array, UBound: the last index value of the array
+    For i = LBound(vCities) To UBound(vCities)
+        szCity = vCities(i, 1)
+        CreateExtractReportForEachCity rngHeader, rngData, rngCrit, szCity
+        
+        
+        'Stop
+    
+    Next
+    
+
+End Sub
+
+
+Sub CreateExtractReportForEachCity(ByRef rngHeader As Range, ByRef rngData As Range, rngCrit As Range, ByVal szCity As String)
+    Dim wbkNew As Workbook
+    Dim wksNew As Worksheet
+    Dim rngExt As Range
+
+
+    Set wbkNew = Workbooks.Add
+    Set wksNew = wbkNew.Worksheets(1)
+    wksNew.Range("A1").Resize(, rngHeader.Columns.Count).Value = rngHeader.Value
+    Set rngExt = wksNew.Range("A1").CurrentRegion
+    rngCrit.Resize(1).Offset(1).Value = szCity
+    rngData.AdvancedFilter xlFilterCopy, rngCrit, rngExt
+    rngExt.CurrentRegion.Columns.AutoFit
+    wbkNew.SaveAs ThisWorkbook.Names("SaveLocation").RefersToRange.Value & "\" & szCity & ".xlsx"
+    'Stop
+        
+End Sub
+
+
+
+
+
+
+
+
